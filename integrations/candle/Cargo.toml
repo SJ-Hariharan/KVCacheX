@@ -1,0 +1,25 @@
+# Reference integration of KVCacheX with the Candle inference runtime (CPU).
+# A separate workspace on purpose: Candle is a heavy dependency and must never enter the default
+# KVCacheX build or its lockfile. Build and test from this directory (see README.md here).
+[package]
+name = "kvcachex-candle"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+publish = false
+description = "Reference integration: Candle's llama2.c model running with KVCacheX-managed KV state"
+
+[workspace]
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[dependencies]
+kvcachex = { path = "../../crates/kvcachex" }
+candle-core = { version = "=0.11.1", default-features = false }
+candle-nn = { version = "=0.11.1", default-features = false }
+candle-transformers = { version = "=0.11.1", default-features = false }
+peak_alloc = "=0.3.0"
+
+[profile.release]
+debug = 1

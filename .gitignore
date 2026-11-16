@@ -7,3 +7,6 @@ dist/
 # Machine-local agent configuration (not part of the project)
 .claude/
 CLAUDE.md
+
+# Downloaded model files (scripts/fetch_tiny_models.sh)
+integrations/candle/models/

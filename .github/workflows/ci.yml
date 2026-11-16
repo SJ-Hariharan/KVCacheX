@@ -73,3 +73,44 @@ jobs:
         run: ./scripts/package_colab.sh
       - name: Simulator invariant check
         run: cargo run --locked --release -p kvx -- simulate --workload shared-prefix --requests 100 --check-every 10
+
+  # Candle reference integration (separate workspace). Synthetic weights only: no model download, no GPU.
+  candle-integration:
+    name: candle integration (CPU, synthetic weights)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: integrations/candle
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Install pinned toolchain
+        shell: bash
+        run: |
+          rustup toolchain install || rustup show
+          rustc --version
+      - name: Cache cargo registry and target
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            integrations/candle/target
+          key: ${{ runner.os }}-candle-${{ hashFiles('rust-toolchain.toml', 'integrations/candle/Cargo.lock') }}
+      - name: Format
+        run: cargo fmt -- --check
+      - name: Clippy
+        run: cargo clippy --locked --release --all-targets -- -D warnings
+      - name: Correctness vs Candle's native cache
+        run: cargo test --locked --release
+      - name: Benchmark CLI fails clearly without model files
+        shell: bash
+        run: |
+          set +e
+          out="$(cargo run --locked --release --bin kvx-candle -- bench 2>&1)"
+          rc=$?
+          set -e
+          test "$rc" -ne 0
+          grep -q "fetch_tiny_models.sh" <<<"$out"

@@ -10,3 +10,8 @@ if ! cargo fmt --all -- --check; then
   echo "pre-commit: formatting differs. Run 'cargo fmt --all', re-stage, and commit again." >&2
   exit 1
 fi
+echo "pre-commit: (integrations/candle) cargo fmt -- --check"
+if ! (cd integrations/candle && cargo fmt -- --check); then
+  echo "pre-commit: formatting differs in integrations/candle. Run 'cargo fmt' there, re-stage, and commit again." >&2
+  exit 1
+fi

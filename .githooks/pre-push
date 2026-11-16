@@ -17,4 +17,8 @@ kvx_run cargo fmt --all -- --check
 kvx_run cargo clippy --locked --all-targets --all-features -- -D warnings
 kvx_run cargo test --locked --workspace --release
 kvx_run cargo test --locked -p kvcachex --release --features degenerate-hash
+# Candle reference integration (separate workspace; synthetic weights, no download).
+kvx_run cargo fmt --manifest-path integrations/candle/Cargo.toml -- --check
+kvx_run cargo clippy --manifest-path integrations/candle/Cargo.toml --locked --release --all-targets -- -D warnings
+kvx_run cargo test --manifest-path integrations/candle/Cargo.toml --locked --release
 echo "pre-push: all checks passed"
