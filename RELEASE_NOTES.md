@@ -1,3 +1,73 @@
+# Candle reference integration (2026-11-16): CPU/f32 only
+
+KVCacheX now holds the K/V state of a real model running in a real inference runtime. That runtime is
+Candle 0.11.1's llama2.c model with the public TinyStories `stories15M` checkpoint (15M parameters, f32,
+**CPU**). This is a reference integration, not a GPU result and not a production server.
+
+**Added**
+- `integrations/candle` (its own Cargo workspace and lockfile; the default build is unchanged):
+  - `PagedLlama`: the llama2_c forward pass with K/V in KVCacheX, same weights and Candle ops;
+  - engines for Candle's native cache and for KVCacheX, with and without the prefix cache;
+  - a port of the llama2.c tokenizer;
+  - `kvx-candle generate|bench`.
+- `PagedKvCache::read_range_into` in the library (block-wise gather in position order).
+- `scripts/fetch_tiny_models.sh`, which downloads files at pinned revisions and checks their SHA-256 hashes;
+  `scripts/candle_bench.sh` and `scripts/candle_report.py`, which produce `results/candle/`.
+- ADR-0006: runtime choice, design, the CUDA follow-up plan, and free-GPU options (none used).
+- CI: a `candle-integration` job (synthetic weights, no download, no GPU). The hooks cover the integration.
+
+**Correctness** (Candle's native cache as the reference)
+| test | result |
+|---|---|
+| no prefix hits (synthetic GQA weights; 23-token prompt + 40 steps) | every logit bit-identical |
+| prefix hit / fully cached prompt / COW fork / eviction with interleaving | same greedy tokens; logits within 1e-4 (bit-identical for forks) |
+| `stories15M`, 64 greedy steps (opt-in, `--ignored`) | identical text and prefill logits; same text again from the prefix cache |
+| benchmark, 4 configurations × 3 arms × 5 timed reps | every arm's outputs identical to native in every rep |
+
+**Benchmark** (`results/candle/REPORT.md`). Setup:
+- Apple M1 (4P+4E), 8 GB, macOS, rustc 1.99.1, `RAYON_NUM_THREADS=4`;
+- 16 requests, 48 generated tokens each, block size 16, 1 warm-up + 5 timed repetitions, arm order rotated.
+
+The workload is closed-loop and interleaved, in one process, with one forward pass per request per step. It isn't
+batched and it isn't a server. TTFT is queue-inclusive and is reported separately from per-request prefill latency.
+The heap figure is Rust heap growth, not RSS.
+
+| configuration | native tok/s | kvcachex tok/s | kvcachex-prefix tok/s | prefill p50 native → prefix | prompt tokens computed native → prefix |
+|---|---:|---:|---:|---:|---:|
+| shared-prefix, C=1 | 192.8 | 181.0 | 205.3 | 34.0 → 15.5 ms | 1388 → 428 |
+| shared-prefix, C=4 | 160.2 | 150.1 | 148.0 | 42.4 → 17.3 ms | 1388 → 300 |
+| unique, C=1 | 148.6 | 126.8 | 141.5 | 50.1 → 51.4 ms | 1586 → 1586 |
+| unique, C=4 | 134.9 | 138.5 | 120.5 | 55.7 → 58.6 ms | 1586 → 1586 |
+
+How to read it:
+- Prefix reuse reliably cuts prefill work and latency on shared prompts. At C=4 it also cuts peak KV in use
+  (7.05 → 5.06 MiB).
+- Throughput differences aren't reliable here. On `unique`, the two KVCacheX arms do identical work, yet they
+  differ by 13%: that is the noise floor.
+- Without reuse, KVCacheX ran at 0.85–1.03× native throughput, slower on 3 of 4 configurations. It adds a
+  block-table gather on every step.
+
+**Checks** (local, macOS, after `source ./env.sh`)
+| check | result |
+|---|---|
+| root fmt; clippy `-D warnings` default and `--all-features` | pass |
+| root workspace tests / collision mode | 65/0/0 / 54/0/1 |
+| simulator invariants | pass |
+| `integrations/candle`: fmt, clippy `-D warnings`, tests | pass; 7 passed, 1 ignored (opt-in real model) |
+| `integrations/candle` real-model test (`--ignored`, `stories15M`) | 1 passed |
+| hooks (pre-commit, pre-push) under `dash` | pass |
+| `cargo audit --deny warnings`, root lockfile | 0 vulnerabilities, 0 warnings |
+| `cargo audit`, `integrations/candle/Cargo.lock` (167 crates) | 0 vulnerabilities; 1 unmaintained warning: `paste` 1.0.15 (RUSTSEC-2024-0436), a compile-time proc-macro used by Candle's `gemm`, no fixed release |
+
+**Limits**
+- CPU only, f32, batch size 1 per forward pass. There is no GPU inference path and no paged-attention kernel:
+  attention gathers K/V into a dense buffer, as Candle's own `Tensor::cat` cache does.
+- The KVCacheX forward pass is a port of Candle's `llama2_c` forward pass, needed because Candle has no
+  KV-cache hook. It covers this one tiny model.
+- `stories260K` (GQA) can't be loaded by Candle 0.11.1. Real-checkpoint testing is therefore MHA only; GQA is
+  covered by the synthetic-weight tests.
+- Remote CI for this change hadn't finished when these notes were committed; see the Actions page.
+
 # Public-readiness audit (2026-11-16)
 
 Third commit on `main`. It adds licenses, compiles the README example as a test, and hardens CI. No library or CLI

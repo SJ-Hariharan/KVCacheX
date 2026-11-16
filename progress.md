@@ -1,6 +1,6 @@
 # Progress
 
-_Last updated: 2026-11-16 (public-readiness audit)_
+_Last updated: 2026-11-16 (Candle reference integration)_
 
 ## Done (milestone 1: core engine + measurement)
 - Environment: Apple M1 (4P+4E), 8 GB, macOS 15.5, Rust 1.99.1, Python 3.15 (no numpy), **no CUDA** → CPU-first (ADR-0003).
@@ -61,6 +61,21 @@ _Last updated: 2026-11-16 (public-readiness audit)_
 - Local: fmt and clippy pass; workspace 64/0/0; collision 53/0/1; simulator pass; both hooks pass. No new GPU run
   (the CUDA code is unchanged since the T4 validation). Details: `RELEASE_NOTES.md`.
 
+## Done (Candle reference integration, 2026-11-16) — CPU/f32 only
+- `integrations/candle` (separate workspace): Candle 0.11.1's llama2.c model with the public TinyStories `stories15M`
+  checkpoint, running with K/V in a KVCacheX `PagedKvCache`, against Candle's unmodified native cache (ADR-0006).
+  Candle has no KV-cache hook, so `PagedLlama` re-expresses that model's forward pass with the same weights and ops.
+- Library: `PagedKvCache::read_range_into` (block-wise, position-ordered gather) plus a unit test.
+- Correctness: 7 tests on synthetic GQA weights (bit-identical without prefix hits; within 1e-4 with prefix hits,
+  full-prompt hits, COW forks, eviction and interleaving; pool exhaustion; byte accounting) and 1 opt-in
+  real-checkpoint test (identical greedy text and prefill logits). A mutation (K stored in V) fails 5 of 7.
+- Benchmark (`results/candle/`, M1, closed-loop interleaved, one forward per request, not batched, not a server):
+  on shared-prefix prompts, prefix reuse cut prompt tokens computed by 69–78% and prefill p50 from 34.0/42.4 to
+  15.5/17.3 ms (C=1/4), and peak KV in use from 7.05 to 5.06 MiB at C=4. Throughput changed by −8% to +6%, within
+  ~13% noise. Without reuse, KVCacheX ran at 0.85–1.03× native throughput. Every arm's outputs matched native.
+- Found: Candle 0.11.1 can't load the GQA `stories260K` `.bin` (its reader assumes n_kv_heads == n_heads).
+- CI: a `candle-integration` job (fmt, clippy, synthetic-weight tests, missing-model error). Hooks cover the crate.
+
 ## Key measurements
 - Paged vs contiguous: 0.36–0.65× steps to drain; waste 24–65% → 0.3–3%.
 - Prefix caching on shared system prompts: 0.17× steps; prefill 492k → 72k tokens.
@@ -70,11 +85,15 @@ _Last updated: 2026-11-16 (public-readiness audit)_
 - Mutex scaling is negative (3–6 M ops/s on 1 thread across runs → about 0.9 M on 8); batching 11 ops/lock gives about 1.6× at 8 threads. See ADR-0004.
 
 ## Next steps (candidates, in priority order)
-1. Keep CI green on ubuntu-latest and macos-latest (first remote run happens with the initial push).
-2. Cascading invalidation of unreachable cached children, and measuring the cache-capacity gain.
-3. Eviction policy experiment: LRU vs. depth-aware/frequency-aware (only with a workload where LRU demonstrably loses).
-4. CPU swap/offload tier behind `KvStorage` (copy cost measured with the real CPU backend).
-5. MiniInfer adapter via `PagedKvCache` once a minimal attention kernel exists.
+1. GPU path for the Candle integration (ADR-0006 step 1–3): device-side write/gather on Candle's CUDA stream
+   (same cudarc 0.19.10), validated on the Colab T4 notebook (Kaggle P100 as fallback). Unverified: whether
+   candle-kernels 0.11.1 builds with Colab's CUDA 13.0 toolkit.
+2. Keep CI green on ubuntu-latest and macos-latest.
+3. Cascading invalidation of unreachable cached children, and measuring the cache-capacity gain.
+4. Eviction policy experiment: LRU vs. depth-aware/frequency-aware (only with a workload where LRU demonstrably loses).
+5. CPU swap/offload tier behind `KvStorage` (copy cost measured with the real CPU backend).
+6. MiniInfer adapter via `PagedKvCache` once a minimal attention kernel exists.
 
 ## Blockers
-- No GPU locally: GPU validation depends on Colab and the user's sign-in and uploads. Validated on one GPU model (T4) only.
+- No GPU locally: GPU validation depends on Colab and the user's sign-in and uploads. Storage validated on one GPU model (T4) only.
+- No GPU *inference* path exists yet; the Candle integration is CPU-only.

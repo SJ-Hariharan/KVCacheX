@@ -28,7 +28,9 @@ What you get:
 | CUDA device storage (`--features cuda`): device-resident KV, D2D copy-on-write | implemented; **validated on a Colab Tesla T4** (9/9 device tests, driver CUDA 13.0); see `results/gpu/` |
 | thread-safe wrapper (`Mutex`) | implemented, stress-tested; does **not** scale with threads |
 | contiguous baseline, scheduler simulator, benchmarks | implemented |
-| attention kernels / model inference, CPU offload, KV quantization, H2O/StreamingLLM policies | **not implemented** (out of scope or future work) |
+| inference-runtime integration: Candle llama2.c model on KVCacheX K/V (`integrations/candle`) | **CPU/f32 reference integration**; output identical to Candle's native cache; benchmarked (`results/candle/`) |
+| GPU inference with KVCacheX K/V, paged-attention kernels | **not implemented**; planned in [ADR-0006](docs/adr/0006-candle-reference-integration.md) |
+| CPU offload, KV quantization, H2O/StreamingLLM policies | **not implemented** (out of scope or future work) |
 | MiniInfer integration | not started; integration point is `PagedKvCache` |
 
 ## Results (Apple M1, `results/REPORT.md`)
@@ -76,13 +78,41 @@ Optional git hooks run the same checks before your changes leave your machine:
 ./scripts/install-hooks.sh --remove   # disable
 ```
 
-* **pre-commit** checks formatting (`cargo fmt --all -- --check`), which takes a second or two.
-* **pre-push** runs formatting, Clippy (`-D warnings`, all features) and both test suites, which takes a few
-  minutes on a cold build.
+* **pre-commit** checks formatting (`cargo fmt --check`, here and in `integrations/candle`), which takes a second or two.
+* **pre-push** runs formatting, Clippy (`-D warnings`, all features) and both test suites, then Clippy and the
+  correctness tests of `integrations/candle`. That takes a few minutes on a cold build.
 
 A hook that fails stops the commit or push and prints the command that failed. If `cargo` isn't installed,
 the hook fails and says so instead of skipping. To bypass a hook once, use `git commit --no-verify` or
 `git push --no-verify`.
+
+## Running a real model: Candle integration (CPU reference)
+
+[`integrations/candle`](integrations/candle/README.md) runs Candle 0.11.1's llama2.c model with the public
+TinyStories `stories15M` checkpoint (15M parameters, f32, CPU) with its attention K/V stored in KVCacheX
+blocks, and compares it against Candle's own KV cache. It is a separate Cargo workspace, so the default build
+stays dependency-free.
+
+```bash
+./scripts/fetch_tiny_models.sh        # ~61 MB, pinned revisions, SHA-256 verified
+cd integrations/candle && cargo test --release && cargo test --release -- --ignored
+cargo run --release --bin kvx-candle -- generate --prompt "Once upon a time" --steps 64
+cd ../.. && ./scripts/candle_bench.sh # A/B benchmark → results/candle/
+```
+
+**Correctness:** with no prefix hits the KVCacheX path is bit-identical to Candle's cache (every logit, on
+synthetic weights and on `stories15M`). With prefix hits, forks (copy-on-write) and evictions, greedy tokens
+are identical and logits agree within 1e-4.
+
+**Benchmark** ([results/candle/REPORT.md](results/candle/REPORT.md), Apple M1, 16 requests, 48 tokens each).
+It is a closed-loop interleaved workload in one CPU process: one forward pass per request per step, no batching,
+not a server. TTFT there includes queueing behind earlier prompts. On 86–88-token prompts that share their opening
+sentences, the prefix cache reused 60–68 tokens per request on average. That cut prompt tokens computed by 69–78% and per-request
+prefill latency (p50) from 34.0 / 42.4 ms to 15.5 / 17.3 ms at 1 / 4 in flight.
+At 4 in flight, sharing also cut peak KV in use from 7.05 to 5.06 MiB. Throughput did **not** improve reliably:
+it moved by −8% to +6%, within this setup's ~13% run-to-run noise. Without reuse, KVCacheX ran at 0.85–1.03×
+native throughput, because it adds a block-table gather on every step. These are CPU reference-cache results,
+not GPU or production-serving speedups.
 
 ## GPU storage and Colab
 
@@ -144,6 +174,7 @@ fn main() -> Result<(), CacheError> {
 * [docs/design.md](docs/design.md): problem, research survey with citations, architecture, invariants
 * [docs/adr/](docs/adr): architecture decision records
 * [docs/benchmarking.md](docs/benchmarking.md): methodology, what is and is not measured
+* [integrations/candle](integrations/candle/README.md): Candle reference integration, tests and benchmark
 * [progress.md](progress.md): status, decisions, next steps
 
 ## License
