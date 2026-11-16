@@ -429,6 +429,44 @@ impl<S: KvStorage> PagedKvCache<S> {
             .map_err(CacheError::Storage)
     }
 
+    /// Gathers K and V of consecutive positions `start..start + n` of one layer into the caller's
+    /// buffers, where `n = k_out.len() / token_width`, in position order (the layout a dense
+    /// attention kernel expects). Positions may span blocks; each block's part is one storage
+    /// read (a device-to-host transfer for device backends). Every position must be below the
+    /// sequence length; reading a position that was never written returns stale slot contents.
+    pub fn read_range_into(
+        &self,
+        seq: SeqId,
+        start: usize,
+        layer: u32,
+        k_out: &mut [f32],
+        v_out: &mut [f32],
+    ) -> Result<(), CacheError> {
+        self.check_poison()?;
+        let w = self.storage.token_width();
+        if w == 0 || k_out.is_empty() || !k_out.len().is_multiple_of(w) || v_out.len() != k_out.len() {
+            return Err(CacheError::Storage(StorageError::ShapeMismatch {
+                what: "k/v buffers",
+                expected: w,
+                got: k_out.len(),
+            }));
+        }
+        let n = k_out.len() / w;
+        self.manager.slot(seq, start + n - 1)?;
+        let bs = self.manager.config().block_size as usize;
+        let mut pos = start;
+        while pos < start + n {
+            let (block, slot) = self.manager.slot(seq, pos)?;
+            let run = (bs - slot as usize).min(start + n - pos);
+            let (a, b) = ((pos - start) * w, (pos - start + run) * w);
+            self.storage
+                .read_slots_into(block, slot, layer, &mut k_out[a..b], &mut v_out[a..b])
+                .map_err(CacheError::Storage)?;
+            pos += run;
+        }
+        Ok(())
+    }
+
     pub fn mark_computed(&mut self, seq: SeqId, computed: usize) -> Result<(), CacheError> {
         self.check_poison()?;
         self.manager.mark_computed(seq, computed)
@@ -537,6 +575,35 @@ mod tests {
             Err(CacheError::Poisoned(_))
         ));
         c.manager().check_invariants().unwrap(); // metadata itself stays consistent
+    }
+
+    #[test]
+    fn read_range_spans_blocks_and_matches_per_position_reads() {
+        let g = ModelGeometry::preset("tiny").unwrap();
+        let mut c = PagedKvCache::new_cpu(&g, cfg());
+        let prompt: Vec<u32> = (0..11).collect(); // 3 blocks of 4, last one partial
+        let a = c.create_sequence(0, &prompt).unwrap();
+        let w = c.storage().token_width();
+        let k: Vec<f32> = (0..11 * w).map(|i| i as f32).collect();
+        let v: Vec<f32> = k.iter().map(|x| -x).collect();
+        c.write_range(a.seq, 0, 1, &k, &v).unwrap();
+        // Unaligned window crossing two block boundaries.
+        let (mut ko, mut vo) = (vec![0.0; 8 * w], vec![0.0; 8 * w]);
+        c.read_range_into(a.seq, 2, 1, &mut ko, &mut vo).unwrap();
+        assert_eq!(ko, k[2 * w..10 * w]);
+        assert_eq!(vo, v[2 * w..10 * w]);
+        let (mut k1, mut v1) = (vec![0.0; w], vec![0.0; w]);
+        c.read_into(a.seq, 9, 1, &mut k1, &mut v1).unwrap();
+        assert_eq!(k1, k[9 * w..10 * w]);
+        // Past the end and bad shapes are errors, and do not poison.
+        let (mut kb, mut vb) = (vec![0.0; 2 * w], vec![0.0; 2 * w]);
+        assert!(c.read_range_into(a.seq, 10, 1, &mut kb, &mut vb).is_err());
+        assert!(matches!(
+            c.read_range_into(a.seq, 0, 1, &mut [0.0; 3], &mut [0.0; 3]),
+            Err(CacheError::Storage(StorageError::ShapeMismatch { .. }))
+        ));
+        assert!(c.read_range_into(a.seq, 0, 99, &mut k1, &mut v1).is_err());
+        assert!(c.poison().is_none());
     }
 
     #[test]
