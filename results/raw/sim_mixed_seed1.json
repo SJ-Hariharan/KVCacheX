@@ -1,0 +1,162 @@
+{
+  "setup": {
+    "workload": "mixed",
+    "workload_detail": "85% short / 15% long",
+    "requests": 400,
+    "arrival_rate_per_step": 2,
+    "seed": 1,
+    "model": "llama-3-8b",
+    "kv_budget_gib": 2,
+    "block_size": 16,
+    "num_blocks": 1024,
+    "max_batch_tokens": 4096,
+    "max_seqs": 256
+  },
+  "results": [
+    {
+      "backend": "contiguous",
+      "steps": 7332,
+      "completed": 400,
+      "rejected": 0,
+      "truncated": false,
+      "generated_tokens": 65493,
+      "generated_tokens_per_step": 8.932487725040916,
+      "prompt_tokens": 193333,
+      "prefill_computed_tokens": 193333,
+      "prefix_cached_tokens": 0,
+      "preemptions": 0,
+      "recomputed_tokens": 0,
+      "mean_running_seqs": 8.932487725040916,
+      "peak_running_seqs": 21,
+      "mean_held_fraction": 0.7568168078233685,
+      "mean_stored_fraction": 0.4664526323900155,
+      "mean_waste_fraction": 0.37611212908917896,
+      "ttft_steps": {
+        "n": 400,
+        "mean": 3108.58,
+        "stdev": 1908.1508201610275,
+        "min": 1,
+        "p50": 3008,
+        "p95": 6225,
+        "p99": 6602,
+        "max": 6701
+      },
+      "e2e_steps": {
+        "n": 400,
+        "mean": 3272.3125,
+        "stdev": 1911.7800205465985,
+        "min": 37,
+        "p50": 3245,
+        "p95": 6434,
+        "p99": 6778,
+        "max": 7126
+      },
+      "wall_ms": 4.596458,
+      "backend_counters": {
+        "allocation_failures": 6860,
+        "peak_reserved_tokens": 16075,
+        "final_external_fragmentation": 0
+      }
+    },
+    {
+      "backend": "paged",
+      "steps": 3871,
+      "completed": 400,
+      "rejected": 0,
+      "truncated": false,
+      "generated_tokens": 65493,
+      "generated_tokens_per_step": 16.918884009299923,
+      "prompt_tokens": 193333,
+      "prefill_computed_tokens": 223430,
+      "prefix_cached_tokens": 0,
+      "preemptions": 63,
+      "recomputed_tokens": 30097,
+      "mean_running_seqs": 16.935158873676052,
+      "peak_running_seqs": 45,
+      "mean_held_fraction": 0.891723664347068,
+      "mean_stored_fraction": 0.8839751164508525,
+      "mean_waste_fraction": 0.008494421768239994,
+      "ttft_steps": {
+        "n": 400,
+        "mean": 1464.725,
+        "stdev": 921.1663710116152,
+        "min": 1,
+        "p50": 1414,
+        "p95": 3058,
+        "p99": 3156,
+        "max": 3182
+      },
+      "e2e_steps": {
+        "n": 400,
+        "mean": 1631.54,
+        "stdev": 926.9483461829074,
+        "min": 20,
+        "p50": 1606,
+        "p95": 3203,
+        "p99": 3381,
+        "max": 3665
+      },
+      "wall_ms": 22.032916,
+      "backend_counters": {
+        "blocks_allocated": 18279,
+        "allocation_failures": 63,
+        "evictions": 0,
+        "prefix_query_blocks": 0,
+        "prefix_hit_blocks": 0,
+        "prefix_revived_blocks": 0,
+        "prefix_block_hit_rate": 0,
+        "peak_used_blocks": 1024
+      }
+    },
+    {
+      "backend": "paged+prefix",
+      "steps": 3871,
+      "completed": 400,
+      "rejected": 0,
+      "truncated": false,
+      "generated_tokens": 65493,
+      "generated_tokens_per_step": 16.918884009299923,
+      "prompt_tokens": 193333,
+      "prefill_computed_tokens": 201478,
+      "prefix_cached_tokens": 21952,
+      "preemptions": 63,
+      "recomputed_tokens": 30097,
+      "mean_running_seqs": 16.935158873676052,
+      "peak_running_seqs": 45,
+      "mean_held_fraction": 0.891723664347068,
+      "mean_stored_fraction": 0.8839751164508525,
+      "mean_waste_fraction": 0.008494389805932862,
+      "ttft_steps": {
+        "n": 400,
+        "mean": 1464.6825,
+        "stdev": 921.1441108078258,
+        "min": 1,
+        "p50": 1414,
+        "p95": 3058,
+        "p99": 3156,
+        "max": 3182
+      },
+      "e2e_steps": {
+        "n": 400,
+        "mean": 1631.4975,
+        "stdev": 926.9288363530978,
+        "min": 20,
+        "p50": 1606,
+        "p95": 3203,
+        "p99": 3381,
+        "max": 3665
+      },
+      "wall_ms": 25.761041,
+      "backend_counters": {
+        "blocks_allocated": 16907,
+        "allocation_failures": 63,
+        "evictions": 15457,
+        "prefix_query_blocks": 13753,
+        "prefix_hit_blocks": 1372,
+        "prefix_revived_blocks": 1372,
+        "prefix_block_hit_rate": 0.09976005235221407,
+        "peak_used_blocks": 1024
+      }
+    }
+  ]
+}

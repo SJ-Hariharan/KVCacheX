@@ -1,0 +1,162 @@
+{
+  "setup": {
+    "workload": "long",
+    "workload_detail": "prompt U[1024,4096], output U[64,512], max_tokens 1024",
+    "requests": 400,
+    "arrival_rate_per_step": 2,
+    "seed": 2,
+    "model": "llama-3-8b",
+    "kv_budget_gib": 2,
+    "block_size": 16,
+    "num_blocks": 1024,
+    "max_batch_tokens": 4096,
+    "max_seqs": 256
+  },
+  "results": [
+    {
+      "backend": "contiguous",
+      "steps": 36521,
+      "completed": 400,
+      "rejected": 0,
+      "truncated": false,
+      "generated_tokens": 121256,
+      "generated_tokens_per_step": 3.3201719558610114,
+      "prompt_tokens": 1078008,
+      "prefill_computed_tokens": 1078008,
+      "prefix_cached_tokens": 0,
+      "preemptions": 0,
+      "recomputed_tokens": 0,
+      "mean_running_seqs": 3.3201719558610114,
+      "peak_running_seqs": 5,
+      "mean_held_fraction": 0.755716676639703,
+      "mean_stored_fraction": 0.5840158560448312,
+      "mean_waste_fraction": 0.22665738515088896,
+      "ttft_steps": {
+        "n": 400,
+        "mean": 17728.92,
+        "stdev": 10574.963654042069,
+        "min": 1,
+        "p50": 17953,
+        "p95": 34008,
+        "p99": 35594,
+        "max": 35918
+      },
+      "e2e_steps": {
+        "n": 400,
+        "mean": 18032.06,
+        "stdev": 10571.836499342111,
+        "min": 108,
+        "p50": 18242,
+        "p95": 34368,
+        "p99": 35889,
+        "max": 36323
+      },
+      "wall_ms": 20.912208000000003,
+      "backend_counters": {
+        "allocation_failures": 35778,
+        "peak_reserved_tokens": 16295,
+        "final_external_fragmentation": 0
+      }
+    },
+    {
+      "backend": "paged",
+      "steps": 23646,
+      "completed": 400,
+      "rejected": 0,
+      "truncated": false,
+      "generated_tokens": 121256,
+      "generated_tokens_per_step": 5.127970904169838,
+      "prompt_tokens": 1078008,
+      "prefill_computed_tokens": 1145123,
+      "prefix_cached_tokens": 0,
+      "preemptions": 30,
+      "recomputed_tokens": 67115,
+      "mean_running_seqs": 5.129239617694324,
+      "peak_running_seqs": 8,
+      "mean_held_fraction": 0.9045276140124122,
+      "mean_stored_fraction": 0.902179626707477,
+      "mean_waste_fraction": 0.0025924998100634892,
+      "ttft_steps": {
+        "n": 400,
+        "mean": 11453.7625,
+        "stdev": 6806.64934968136,
+        "min": 1,
+        "p50": 11570,
+        "p95": 21827,
+        "p99": 22863,
+        "max": 23056
+      },
+      "e2e_steps": {
+        "n": 400,
+        "mean": 11760.915,
+        "stdev": 6803.606226626618,
+        "min": 108,
+        "p50": 11945,
+        "p95": 22187,
+        "p99": 23220,
+        "max": 23448
+      },
+      "wall_ms": 59.672833000000004,
+      "backend_counters": {
+        "blocks_allocated": 79347,
+        "allocation_failures": 30,
+        "evictions": 0,
+        "prefix_query_blocks": 0,
+        "prefix_hit_blocks": 0,
+        "prefix_revived_blocks": 0,
+        "prefix_block_hit_rate": 0,
+        "peak_used_blocks": 1024
+      }
+    },
+    {
+      "backend": "paged+prefix",
+      "steps": 23644,
+      "completed": 400,
+      "rejected": 0,
+      "truncated": false,
+      "generated_tokens": 121256,
+      "generated_tokens_per_step": 5.128404669260701,
+      "prompt_tokens": 1078008,
+      "prefill_computed_tokens": 1085443,
+      "prefix_cached_tokens": 59680,
+      "preemptions": 30,
+      "recomputed_tokens": 67115,
+      "mean_running_seqs": 5.1296734901031975,
+      "peak_running_seqs": 8,
+      "mean_held_fraction": 0.9046041262450305,
+      "mean_stored_fraction": 0.9022559403284132,
+      "mean_waste_fraction": 0.002592587517909318,
+      "ttft_steps": {
+        "n": 400,
+        "mean": 11452.585,
+        "stdev": 6805.628125915022,
+        "min": 1,
+        "p50": 11570,
+        "p95": 21825,
+        "p99": 22860,
+        "max": 23054
+      },
+      "e2e_steps": {
+        "n": 400,
+        "mean": 11759.74,
+        "stdev": 6802.584237123263,
+        "min": 108,
+        "p50": 11945,
+        "p95": 22185,
+        "p99": 23217,
+        "max": 23446
+      },
+      "wall_ms": 90.481625,
+      "backend_counters": {
+        "blocks_allocated": 75617,
+        "allocation_failures": 30,
+        "evictions": 74191,
+        "prefix_query_blocks": 71369,
+        "prefix_hit_blocks": 3730,
+        "prefix_revived_blocks": 3730,
+        "prefix_block_hit_rate": 0.0522635878322521,
+        "peak_used_blocks": 1024
+      }
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 2445fbc07ae6944a8391e9d3f82e1751e35ba8bf4dc4967dd84ca1e8b873fb49 # shrinks to ops = [Create { ns: 0, base: 0, suffix: [0] }, Compute { who: 0 }, Fork { who: 0 }]
+cc 3f34f1eb485e1b273e439c8c274af138c198d5669cc2d8301eedf665ec610746 # shrinks to ops = [Create { ns: 0, base: 0, suffix: [0, 0, 0, 0, 0] }, Compute { who: 0 }, Fork { who: 0 }]
+cc 9d15e059a777708f71a67ddba861ab3be8c2efcd93b5cadf513a8a113fb8670f # shrinks to ops = [Create { ns: 0, base: 0, suffix: [0] }, Create { ns: 0, base: 0, suffix: [] }, Compute { who: 1331430853097360732 }, Fork { who: 3608306268801647994 }]
+cc 22de30521718d33f181c673a033cab7383b7bfefc5413d7c569abc362912bd94 # shrinks to ops = [Create { ns: 1, base: 0, suffix: [0, 0, 2, 2] }, Create { ns: 1, base: 2, suffix: [] }, Compute { who: 4158656561216621450 }, Compute { who: 2384010818575332001 }, Create { ns: 1, base: 2, suffix: [0, 0, 2, 2] }]

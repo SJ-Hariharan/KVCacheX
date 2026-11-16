@@ -1,0 +1,240 @@
+{
+  "timer_overhead_ns": {
+    "n": 100000,
+    "mean": 37.97685,
+    "stdev": 111.09596184022558,
+    "min": 0,
+    "p50": 42,
+    "p95": 42,
+    "p99": 42,
+    "max": 23041
+  },
+  "ops_ns": [
+    {
+      "name": "create_512",
+      "detail": "create a 512-token unique prompt (prefix caching off); 256 live seqs per rep",
+      "latency_ns": {
+        "n": 5120,
+        "mean": 705.269140625,
+        "stdev": 1112.0462427830732,
+        "min": 416,
+        "p50": 583,
+        "p95": 875,
+        "p99": 3250,
+        "max": 51916
+      }
+    },
+    {
+      "name": "release_512",
+      "detail": "release a 512-token sequence, tail-first (prefix caching off)",
+      "latency_ns": {
+        "n": 5120,
+        "mean": 345.952734375,
+        "stdev": 253.23997274907543,
+        "min": 250,
+        "p50": 333,
+        "p95": 416,
+        "p99": 500,
+        "max": 15250
+      }
+    },
+    {
+      "name": "create_512_miss+prefix",
+      "detail": "create a 512-token unique prompt (prefix caching on); 256 live seqs per rep",
+      "latency_ns": {
+        "n": 5120,
+        "mean": 910.372265625,
+        "stdev": 1440.8648123249839,
+        "min": 500,
+        "p50": 750,
+        "p95": 1167,
+        "p99": 4042,
+        "max": 71750
+      }
+    },
+    {
+      "name": "release_512+prefix",
+      "detail": "release a 512-token sequence, tail-first (prefix caching on)",
+      "latency_ns": {
+        "n": 5120,
+        "mean": 646.498046875,
+        "stdev": 1682.2711118498405,
+        "min": 375,
+        "p50": 542,
+        "p95": 833,
+        "p99": 1292,
+        "max": 92709
+      }
+    },
+    {
+      "name": "create_1088_hit1024",
+      "detail": "create 1024 shared + 64 unique tokens; 64 of 68 blocks served from prefix cache",
+      "latency_ns": {
+        "n": 5120,
+        "mean": 7439.015625,
+        "stdev": 4864.589643599484,
+        "min": 4542,
+        "p50": 6916,
+        "p95": 8250,
+        "p99": 23666,
+        "max": 143334
+      }
+    },
+    {
+      "name": "decode_append_1",
+      "detail": "append 1 token + mark_computed, 256 live seqs x 64 rounds (prefix caching on)",
+      "latency_ns": {
+        "n": 327680,
+        "mean": 246.22520446777344,
+        "stdev": 765.4931904512438,
+        "min": 83,
+        "p50": 209,
+        "p95": 375,
+        "p99": 583,
+        "max": 185208
+      }
+    },
+    {
+      "name": "fork_1024",
+      "detail": "fork a fully computed 1024-token sequence (64 block refs)",
+      "latency_ns": {
+        "n": 5120,
+        "mean": 717.991796875,
+        "stdev": 2255.629279622506,
+        "min": 458,
+        "p50": 541,
+        "p95": 917,
+        "p99": 3667,
+        "max": 93666
+      }
+    },
+    {
+      "name": "baseline_reserve",
+      "detail": "contiguous first-fit reserve, 256 live extents with holes (baseline)",
+      "latency_ns": {
+        "n": 5120,
+        "mean": 533.4255859375,
+        "stdev": 693.6060626326524,
+        "min": 41,
+        "p50": 500,
+        "p95": 916,
+        "p99": 1083,
+        "max": 33166
+      }
+    }
+  ],
+  "shared_threads": [
+    {
+      "threads": 1,
+      "batched_lock": false,
+      "ops_per_sec": {
+        "n": 20,
+        "mean": 4908346.9574185,
+        "stdev": 257682.19067081044,
+        "min": 4295861.445190275,
+        "p50": 5004928.717302744,
+        "p95": 5146298.746852864,
+        "p99": 5147051.254336391,
+        "max": 5147051.254336391
+      }
+    },
+    {
+      "threads": 2,
+      "batched_lock": false,
+      "ops_per_sec": {
+        "n": 20,
+        "mean": 2154110.827983445,
+        "stdev": 271240.49781418114,
+        "min": 1754033.4097919154,
+        "p50": 2098494.058662543,
+        "p95": 2552716.3483671113,
+        "p99": 2565136.3917998653,
+        "max": 2565136.3917998653
+      }
+    },
+    {
+      "threads": 4,
+      "batched_lock": false,
+      "ops_per_sec": {
+        "n": 20,
+        "mean": 1248147.6063963673,
+        "stdev": 351233.5081721596,
+        "min": 817518.4315336628,
+        "p50": 1129470.9465675019,
+        "p95": 1943289.4263281533,
+        "p99": 2143592.280173942,
+        "max": 2143592.280173942
+      }
+    },
+    {
+      "threads": 8,
+      "batched_lock": false,
+      "ops_per_sec": {
+        "n": 20,
+        "mean": 914027.3679542834,
+        "stdev": 143448.17621566012,
+        "min": 429463.6462683635,
+        "p50": 923630.5766328024,
+        "p95": 1034952.4311458938,
+        "p99": 1229618.0760843651,
+        "max": 1229618.0760843651
+      }
+    },
+    {
+      "threads": 1,
+      "batched_lock": true,
+      "ops_per_sec": {
+        "n": 20,
+        "mean": 2986827.097182416,
+        "stdev": 376169.818710892,
+        "min": 2480095.821884027,
+        "p50": 2880602.5592058753,
+        "p95": 3692152.983351914,
+        "p99": 3821544.967251097,
+        "max": 3821544.967251097
+      }
+    },
+    {
+      "threads": 2,
+      "batched_lock": true,
+      "ops_per_sec": {
+        "n": 20,
+        "mean": 2501616.995821898,
+        "stdev": 97871.99605369863,
+        "min": 2282182.2974023786,
+        "p50": 2516208.8167385072,
+        "p95": 2613007.6828958397,
+        "p99": 2640376.20080109,
+        "max": 2640376.20080109
+      }
+    },
+    {
+      "threads": 4,
+      "batched_lock": true,
+      "ops_per_sec": {
+        "n": 20,
+        "mean": 1613939.4116248547,
+        "stdev": 124905.35240473841,
+        "min": 1451190.32649721,
+        "p50": 1591296.1021762546,
+        "p95": 1792592.303786055,
+        "p99": 2032614.219060378,
+        "max": 2032614.219060378
+      }
+    },
+    {
+      "threads": 8,
+      "batched_lock": true,
+      "ops_per_sec": {
+        "n": 20,
+        "mean": 1432217.7682120379,
+        "stdev": 82855.46628265167,
+        "min": 1219112.0050496175,
+        "p50": 1442009.304941929,
+        "p95": 1513077.7025235593,
+        "p99": 1559313.7339764345,
+        "max": 1559313.7339764345
+      }
+    }
+  ]
+}

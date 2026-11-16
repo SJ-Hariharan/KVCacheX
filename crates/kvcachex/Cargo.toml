@@ -1,0 +1,24 @@
+[package]
+name = "kvcachex"
+description = "Paged KV-cache block manager with exact prefix caching for LLM inference"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+# Testing only: every block hashes to the same bucket, so prefix correctness rests
+# entirely on exact verification. Used by CI to prove collisions cannot cause bad sharing.
+degenerate-hash = []
+# Optional CUDA device storage (`CudaKvStorage`). Uses the CUDA driver API through cudarc's safe
+# interface, loading libcuda at runtime: building needs no CUDA toolkit, running needs an NVIDIA
+# driver. Bindings target the CUDA 12.0 driver API, so any driver supporting CUDA >= 12.0 works.
+cuda = ["dep:cudarc"]
+
+[dependencies]
+cudarc = { version = "=0.19.10", optional = true, default-features = false, features = ["std", "driver", "dynamic-loading", "cuda-12000"] }
+
+[dev-dependencies]
+proptest = "1"

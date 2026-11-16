@@ -1,0 +1,20 @@
+[package]
+name = "kvx"
+description = "KVCacheX CLI: memory estimation, workload simulation and benchmarks"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "kvx"
+path = "src/main.rs"
+
+[features]
+# Enables `kvx gpu-info` / `kvx gpu-bench` (CUDA device storage). Needs an NVIDIA driver at run time.
+cuda = ["kvcachex/cuda"]
+
+[dependencies]
+kvcachex = { path = "../kvcachex" }

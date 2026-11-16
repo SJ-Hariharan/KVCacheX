@@ -1,0 +1,72 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      # rust-toolchain.toml pins the toolchain (1.99.1 + clippy + rustfmt); install exactly that.
+      # `rustup toolchain install` with no argument reads the file (rustup >= 1.28); older rustup
+      # installs it on `rustup show`.
+      - name: Install pinned toolchain
+        shell: bash
+        run: |
+          rustup toolchain install || rustup show
+          rustc --version
+          cargo --version
+
+      - name: Cache cargo registry and target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}
+
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --locked --all-targets --all-features -- -D warnings
+      - name: Tests (workspace, release)
+        run: cargo test --locked --workspace --release
+      - name: Tests (degenerate hash, every block collides)
+        run: cargo test --locked -p kvcachex --release --features degenerate-hash
+      - name: CUDA backend fails clearly without a GPU (compile + negative test)
+        shell: bash
+        run: |
+          # Runners have no NVIDIA GPU: every GPU test must FAIL with the explicit message, never pass or skip.
+          set +e
+          out="$(cargo test --locked -p kvcachex --release --features cuda --test gpu -- --test-threads=1 2>&1)"
+          rc=$?
+          set -e
+          tail -20 <<<"$out"
+          test "$rc" -ne 0
+          grep -q "GPU tests were requested (--features cuda) but no usable CUDA device" <<<"$out"
+          ! grep -Eq "test result: ok|[1-9][0-9]* passed" <<<"$out"
+      - name: Package Colab source archive
+        run: ./scripts/package_colab.sh
+      - name: Simulator invariant check
+        run: cargo run --locked --release -p kvx -- simulate --workload shared-prefix --requests 100 --check-every 10

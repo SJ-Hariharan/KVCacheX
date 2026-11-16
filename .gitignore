@@ -1,0 +1,9 @@
+target/
+.cargo-home/
+results/raw/*.tmp
+.DS_Store
+dist/
+
+# Machine-local agent configuration (not part of the project)
+.claude/
+CLAUDE.md
