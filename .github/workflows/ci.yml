@@ -25,7 +25,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v4
+      # Actions are pinned to full commit SHAs (the v4 tags as of 2026-11-16) so a moved tag can't change CI.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       # rust-toolchain.toml pins the toolchain (1.99.1 + clippy + rustfmt); install exactly that.
       # `rustup toolchain install` with no argument reads the file (rustup >= 1.28); older rustup
@@ -38,7 +41,7 @@ jobs:
           cargo --version
 
       - name: Cache cargo registry and target
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             ~/.cargo/registry/index

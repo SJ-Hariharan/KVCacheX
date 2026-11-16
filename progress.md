@@ -1,6 +1,6 @@
 # Progress
 
-_Last updated: 2026-11-16 (milestone 4: published to GitHub)_
+_Last updated: 2026-11-16 (public-readiness audit)_
 
 ## Done (milestone 1: core engine + measurement)
 - Environment: Apple M1 (4P+4E), 8 GB, macOS 15.5, Rust 1.99.1, Python 3.15 (no numpy), **no CUDA** → CPU-first (ADR-0003).
@@ -52,6 +52,14 @@ _Last updated: 2026-11-16 (milestone 4: published to GitHub)_
   also leaves `CLAUDE.md` out (it followed `.gitignore`); the run-2 archive included it.
 - Pushed to `github.com/SJ-Hariharan/KVCacheX` (`main`). CI results are on the Actions page; they were not known
   when this file was committed, so none are claimed here.
+
+## Done (public-readiness audit, 2026-11-16)
+- `LICENSE-MIT` / `LICENSE-APACHE` (2026 SJ-Hariharan) and a README License section, consistent with `MIT OR Apache-2.0`.
+- `cargo audit --deny warnings`: 0 vulnerabilities, 0 warnings (54 dependencies, advisory-db `02e2517f`, 2026-11-15).
+- History, tracked files, results and archive scanned for secrets, private paths and agent config: clean.
+- The README example is now a compiled doctest; CI actions are pinned to commit SHAs with `persist-credentials: false`.
+- Local: fmt and clippy pass; workspace 64/0/0; collision 53/0/1; simulator pass; both hooks pass. No new GPU run
+  (the CUDA code is unchanged since the T4 validation). Details: `RELEASE_NOTES.md`.
 
 ## Key measurements
 - Paged vs contiguous: 0.36–0.65× steps to drain; waste 24–65% → 0.3–3%.

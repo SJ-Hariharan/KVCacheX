@@ -30,6 +30,11 @@
 //! m.check_invariants().unwrap();
 //! ```
 
+// Compile and run the README's Rust examples as doctests (never part of a normal build).
+#[cfg(doctest)]
+#[doc = include_str!("../../../README.md")]
+struct ReadmeDoctests;
+
 pub mod baseline;
 mod error;
 pub mod geometry;

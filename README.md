@@ -103,23 +103,41 @@ inference performance.
 
 ## Library example
 
+This example is compiled and run as a doctest (`cargo test --doc -p kvcachex`), so it stays in sync with the API.
+
 ```rust
-use kvcachex::{geometry::ModelGeometry, CacheConfig, PagedKvCache};
+use kvcachex::{geometry::ModelGeometry, CacheConfig, CacheError, PagedKvCache};
 
-let geom = ModelGeometry::preset("tiny").unwrap();
-let mut cache = PagedKvCache::new_cpu(&geom, CacheConfig { block_size: 16, num_blocks: 1024, enable_prefix_caching: true });
-
-let prompt: Vec<u32> = (0..40).collect();
-let a = cache.create_sequence(/* namespace (e.g. LoRA id) */ 0, &prompt)?;
-for pos in a.cached_tokens..prompt.len() {          // compute only what is not cached
-    for layer in 0..geom.num_layers {
-        let (k, v) = run_layer(pos, layer);          // your model
-        cache.write(a.seq, pos, layer, &k, &v)?;
-    }
+// Stand-in for your model: K and V for one token in one layer.
+fn run_layer(width: usize, pos: usize, layer: u32) -> (Vec<f32>, Vec<f32>) {
+    let x = (pos * 100 + layer as usize) as f32;
+    (vec![x; width], vec![-x; width])
 }
-cache.mark_computed(a.seq, prompt.len())?;          // full blocks become shareable
-cache.append_tokens(a.seq, &[next_token])?;         // decode; COW handled internally
-cache.release(a.seq)?;                              // blocks stay cached until evicted
+
+fn main() -> Result<(), CacheError> {
+    let geom = ModelGeometry::preset("tiny").unwrap();
+    let width = (geom.num_kv_heads * geom.head_dim) as usize; // floats per token per layer
+    let cfg = CacheConfig { block_size: 16, num_blocks: 1024, enable_prefix_caching: true };
+    let mut cache = PagedKvCache::new_cpu(&geom, cfg);
+
+    let prompt: Vec<u32> = (0..40).collect();
+    let a = cache.create_sequence(/* namespace, e.g. a LoRA id */ 0, &prompt)?;
+    for pos in a.cached_tokens..prompt.len() {        // compute only what isn't cached
+        for layer in 0..geom.num_layers {
+            let (k, v) = run_layer(width, pos, layer);
+            cache.write(a.seq, pos, layer, &k, &v)?;
+        }
+    }
+    cache.mark_computed(a.seq, prompt.len())?;         // full blocks become shareable
+
+    let b = cache.create_sequence(0, &prompt)?;        // same prompt: 2 full blocks reused
+    assert_eq!(b.cached_tokens, 32);
+
+    cache.append_tokens(a.seq, &[40])?;                // decode step; copy-on-write is internal
+    cache.release(a.seq)?;                             // blocks stay cached until evicted
+    cache.release(b.seq)?;
+    Ok(())
+}
 ```
 
 ## Documentation
@@ -127,3 +145,15 @@ cache.release(a.seq)?;                              // blocks stay cached until 
 * [docs/adr/](docs/adr): architecture decision records
 * [docs/benchmarking.md](docs/benchmarking.md): methodology, what is and is not measured
 * [progress.md](progress.md): status, decisions, next steps
+
+## License
+
+KVCacheX is dual-licensed under either of
+
+* the MIT license ([LICENSE-MIT](LICENSE-MIT)), or
+* the Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE)),
+
+at your option. In plain terms: you may use, copy, modify and redistribute it, including commercially, as long as you
+keep the copyright and license notice. Apache-2.0 also includes an explicit patent grant. Unless you explicitly state
+otherwise, any contribution you intentionally submit for inclusion in this project is dual-licensed the same way,
+without additional terms or conditions.

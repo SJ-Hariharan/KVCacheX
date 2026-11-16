@@ -1,3 +1,42 @@
+# Public-readiness audit (2026-11-16)
+
+Third commit on `main`. It adds licenses, compiles the README example as a test, and hardens CI. No library or CLI
+behavior changed. The CUDA code is unchanged since the Colab T4 runs (`results/gpu/`); no new GPU run was made.
+
+**Changes**
+- `LICENSE-MIT` and `LICENSE-APACHE` (copyright 2026 SJ-Hariharan) match the existing `license = "MIT OR Apache-2.0"`
+  in `Cargo.toml`. The Apache file is the official apache.org text (sha256 `cfc7749b…3d30` before editing) with only
+  the appendix's copyright placeholder line filled in. The README gains a License section.
+- The README library example called undefined helpers. It is now a complete program, compiled and run as a doctest
+  (`ReadmeDoctests` in `lib.rs`, `cfg(doctest)` only).
+- CI: `actions/checkout` and `actions/cache` are pinned to the full commit SHAs of their `v4` tags, and checkout sets
+  `persist-credentials: false`. Permissions were already `contents: read`, there are no secrets, and there is no
+  `pull_request_target`.
+
+**Audit results**
+| item | result |
+|---|---|
+| `cargo audit` (cargo-audit 0.23.0; it has no `--locked` flag, so `--deny warnings` was used on the committed `Cargo.lock`, which stayed unchanged) | 0 vulnerabilities, 0 warnings (unmaintained/yanked/unsound); 54 crate dependencies; 1509 advisories, advisory-db commit `02e2517f`, 2026-11-15 |
+| lockfile | 56 packages, all from crates.io (no git or path dependencies besides the two workspace crates); `cudarc` only behind `cuda` |
+| unsafe | `unsafe_code = "forbid"` workspace-wide, inherited by both crates; no `unsafe` in the code. The one `catch_unwind` (`storage/cuda.rs`) converts cudarc's missing-driver panic to `StorageError::Unavailable` |
+| file writes | `kvx` writes only to paths it is given; `kvx report` deletes only `*.json` in `<out>/raw/` before regenerating |
+| scripts / hooks | `set -eu`; no `eval`, no downloads, no `rm -rf` of a variable path except `package_colab.sh`'s own `mktemp -d` directory |
+| tracked files and full git history | no tokens/keys (GitHub, AWS, OpenAI-style, Slack, Google, private-key patterns), no user email, no `/Users/` or host names, no `.claude/` or `CLAUDE.md`; one author/committer (the GitHub noreply address); no co-author trailers |
+| result records | no IPs, UUIDs, serials or GPU UUIDs; Colab paths are the generic `/content/...` |
+| upload archive (`scripts/package_colab.sh`) | 80 files, identical to the repository's file set; both license files byte-identical; no forbidden paths; secret scan clean |
+
+**Checks (local, macOS, rustc 1.99.1, after `source ./env.sh`)**
+| check | result |
+|---|---|
+| `cargo fmt --all -- --check` | pass |
+| `cargo clippy --locked --all-targets -- -D warnings`, and with `--all-features` | pass |
+| `cargo test --locked --workspace --release` | 64 passed, 0 failed, 0 ignored (includes the README doctest) |
+| `cargo test --locked -p kvcachex --release --features degenerate-hash` | 53 passed, 0 failed, 1 ignored |
+| simulator invariants | pass |
+| `.githooks/pre-commit`, `.githooks/pre-push` under `dash` | pass |
+
+Remote CI for this commit hadn't finished when these notes were committed; see the Actions page.
+
 # Publication (2026-11-16)
 
 First push to `github.com/SJ-Hariharan/KVCacheX`, branch `main`, two commits (implementation; user docs, hooks and
