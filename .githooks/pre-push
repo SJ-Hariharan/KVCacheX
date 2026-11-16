@@ -1,0 +1,20 @@
+#!/bin/sh
+# KVCacheX pre-push hook: the same lint and test gates CI runs (a few minutes on a cold build).
+# Install with ./scripts/install-hooks.sh. Bypass once with `git push --no-verify`.
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+. ./.githooks/lib.sh
+kvx_require_cargo
+kvx_run() {
+  echo "pre-push: $*"
+  if ! "$@"; then
+    echo "pre-push: FAILED: $*" >&2
+    echo "pre-push: push aborted. Fix the failure above (or bypass once with --no-verify)." >&2
+    exit 1
+  fi
+}
+kvx_run cargo fmt --all -- --check
+kvx_run cargo clippy --locked --all-targets --all-features -- -D warnings
+kvx_run cargo test --locked --workspace --release
+kvx_run cargo test --locked -p kvcachex --release --features degenerate-hash
+echo "pre-push: all checks passed"

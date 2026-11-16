@@ -1,0 +1,12 @@
+#!/bin/sh
+# KVCacheX pre-commit hook: formatting check (fast, a second or two).
+# Install with ./scripts/install-hooks.sh. Bypass once with `git commit --no-verify`.
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+. ./.githooks/lib.sh
+kvx_require_cargo
+echo "pre-commit: cargo fmt --all -- --check"
+if ! cargo fmt --all -- --check; then
+  echo "pre-commit: formatting differs. Run 'cargo fmt --all', re-stage, and commit again." >&2
+  exit 1
+fi

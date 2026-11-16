@@ -1,0 +1,274 @@
+{
+  "started_utc": "2026-11-15T19:18:19+00:00",
+  "in_colab": true,
+  "python": "3.13.16",
+  "os": "Linux-6.6.159+-x86_64-with-glibc2.39",
+  "env": {
+    "gpu": {
+      "nvidia_smi": true,
+      "driver_cuda_version": "13.0",
+      "devices": [
+        "0, Tesla T4, 580.82.07, 15360 MiB, 7.5"
+      ],
+      "libcuda": [
+        "/usr/lib64-nvidia/libcuda.so",
+        "/usr/lib64-nvidia/libcuda.so.1",
+        "/usr/lib64-nvidia/libcuda.so.580.82.07"
+      ],
+      "nvcc_toolkit_version": "13.0",
+      "available": true
+    },
+    "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+    "cargo": "cargo 1.99.1 (5f94df478 2026-08-27)",
+    "rust_toolchain_toml": "[toolchain]\nchannel = \"1.99.1\"\ncomponents = [\"clippy\", \"rustfmt\"]\nprofile = \"minimal\"\n"
+  },
+  "checks": [
+    {
+      "name": "nvidia-smi",
+      "cmd": "nvidia-smi",
+      "cwd": null,
+      "rc": 0,
+      "seconds": 0.2,
+      "tests": {
+        "suites": 0,
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log": "/content/kvx_logs/nvidia-smi.log"
+    },
+    {
+      "name": "nvidia-smi query",
+      "cmd": "nvidia-smi --query-gpu=index,name,driver_version,memory.total,compute_cap --format=csv,noheader",
+      "cwd": null,
+      "rc": 0,
+      "seconds": 0.0,
+      "tests": {
+        "suites": 0,
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log": "/content/kvx_logs/nvidia-smi_query.log"
+    },
+    {
+      "name": "libcuda",
+      "cmd": "(ldconfig -p | grep -oE '/[^ ]*libcuda\\.so[^ ]*'; for d in $(echo \"$LD_LIBRARY_PATH\" | tr : ' ') /usr/lib64-nvidia; do ls -1 \"$d\"/libcuda.so* 2>/dev/null; done) | sort -u",
+      "cwd": null,
+      "rc": 0,
+      "seconds": 0.0,
+      "tests": {
+        "suites": 0,
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log": "/content/kvx_logs/libcuda.log"
+    },
+    {
+      "name": "nvcc",
+      "cmd": "/usr/local/cuda/bin/nvcc --version",
+      "cwd": null,
+      "rc": 0,
+      "seconds": 0.0,
+      "tests": {
+        "suites": 0,
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log": "/content/kvx_logs/nvcc.log"
+    },
+    {
+      "name": "install rustup",
+      "cmd": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup-init.sh && sh /tmp/rustup-init.sh -y --profile minimal --default-toolchain none",
+      "cwd": null,
+      "rc": 0,
+      "seconds": 0.7,
+      "tests": {
+        "suites": 0,
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log": "/content/kvx_logs/install_rustup.log"
+    },
+    {
+      "name": "rustup version",
+      "cmd": "rustup --version",
+      "cwd": null,
+      "rc": 0,
+      "seconds": 0.0,
+      "tests": {
+        "suites": 0,
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log": "/content/kvx_logs/rustup_version.log"
+    },
+    {
+      "name": "install pinned toolchain",
+      "cmd": "rustup toolchain install || rustup show",
+      "cwd": "/content/kvcachex",
+      "rc": 0,
+      "seconds": 14.5,
+      "tests": {
+        "suites": 0,
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log": "/content/kvx_logs/install_pinned_toolchain.log"
+    },
+    {
+      "name": "rustc",
+      "cmd": "rustc --version",
+      "cwd": "/content/kvcachex",
+      "rc": 0,
+      "seconds": 0.1,
+      "tests": {
+        "suites": 0,
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log": "/content/kvx_logs/rustc.log"
+    },
+    {
+      "name": "cargo",
+      "cmd": "cargo --version",
+      "cwd": "/content/kvcachex",
+      "rc": 0,
+      "seconds": 0.1,
+      "tests": {
+        "suites": 0,
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log": "/content/kvx_logs/cargo.log"
+    },
+    {
+      "name": "fmt",
+      "cmd": "cargo fmt --all -- --check",
+      "cwd": "/content/kvcachex",
+      "rc": 0,
+      "seconds": 0.2,
+      "tests": {
+        "suites": 0,
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log": "/content/kvx_logs/fmt.log"
+    },
+    {
+      "name": "clippy",
+      "cmd": "cargo clippy --locked --all-targets --all-features -- -D warnings",
+      "cwd": "/content/kvcachex",
+      "rc": 0,
+      "seconds": 10.6,
+      "tests": {
+        "suites": 0,
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log": "/content/kvx_logs/clippy.log"
+    },
+    {
+      "name": "cpu-tests",
+      "cmd": "cargo test --locked --workspace --release",
+      "cwd": "/content/kvcachex",
+      "rc": 0,
+      "seconds": 86.0,
+      "tests": {
+        "suites": 7,
+        "passed": 63,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log": "/content/kvx_logs/cpu-tests.log"
+    },
+    {
+      "name": "collision-tests",
+      "cmd": "cargo test --locked -p kvcachex --release --features degenerate-hash",
+      "cwd": "/content/kvcachex",
+      "rc": 0,
+      "seconds": 60.8,
+      "tests": {
+        "suites": 6,
+        "passed": 52,
+        "failed": 0,
+        "ignored": 1
+      },
+      "log": "/content/kvx_logs/collision-tests.log"
+    },
+    {
+      "name": "simulator-invariants",
+      "cmd": "cargo run --locked --release -p kvx -- simulate --workload shared-prefix --requests 100 --check-every 10",
+      "cwd": "/content/kvcachex",
+      "rc": 0,
+      "seconds": 8.2,
+      "tests": {
+        "suites": 0,
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log": "/content/kvx_logs/simulator-invariants.log"
+    },
+    {
+      "name": "gpu-tests",
+      "cmd": "cargo test --locked -p kvcachex --release --features cuda --test gpu -- --test-threads=1 --nocapture",
+      "cwd": "/content/kvcachex",
+      "rc": 0,
+      "seconds": 37.7,
+      "tests": {
+        "suites": 1,
+        "passed": 9,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log": "/content/kvx_logs/gpu-tests.log"
+    },
+    {
+      "name": "gpu-info",
+      "cmd": "cargo run --locked --release -p kvx --features cuda -- gpu-info",
+      "cwd": "/content/kvcachex",
+      "rc": 0,
+      "seconds": 10.2,
+      "tests": {
+        "suites": 0,
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log": "/content/kvx_logs/gpu-info.log"
+    },
+    {
+      "name": "gpu-bench",
+      "cmd": "cargo run --locked --release -p kvx --features cuda -- gpu-bench --json results/gpu/gpu_bench.json",
+      "cwd": "/content/kvcachex",
+      "rc": 0,
+      "seconds": 1.1,
+      "tests": {
+        "suites": 0,
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log": "/content/kvx_logs/gpu-bench.log"
+    }
+  ],
+  "source": {
+    "method": "zip-upload",
+    "file": "kvcachex-src-run2.zip",
+    "bytes": 146294,
+    "sha256": "8b826ad2103e23f075237dcf55ccc1d2fd854130b0657959ce7c3c29a9c785fe",
+    "entries": 91
+  },
+  "gpu_validated": true,
+  "finished_utc": "2026-11-15T19:26:54+00:00"
+}

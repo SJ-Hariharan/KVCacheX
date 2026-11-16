@@ -1,0 +1,183 @@
+{
+  "kind": "storage-level microbenchmark (not inference)",
+  "device": {
+    "ordinal": 0,
+    "device_count": 1,
+    "name": "Tesla T4",
+    "compute_capability": "7.5",
+    "total_mem_bytes": 15637086208,
+    "free_mem_bytes": 15527116800
+  },
+  "model_geometry": "llama-3-8b",
+  "element_type": "f32",
+  "block_size": 16,
+  "blocks": 64,
+  "device_bytes": 268435456,
+  "warmup": 20,
+  "reps": 200,
+  "timing": "wall clock per op, including stream synchronize",
+  "cuda": [
+    {
+      "name": "write_1_slot",
+      "direction": "H2D",
+      "bytes": 8192,
+      "latency_ns": {
+        "n": 200,
+        "mean": 13993.765,
+        "stdev": 4157.587428534068,
+        "min": 12281,
+        "p50": 13205,
+        "p95": 18409,
+        "p99": 29359,
+        "max": 61562
+      },
+      "gb_per_s_at_p50": 0.6203710715638016
+    },
+    {
+      "name": "write_block_plane",
+      "direction": "H2D",
+      "bytes": 131072,
+      "latency_ns": {
+        "n": 200,
+        "mean": 50528.67,
+        "stdev": 3459.9270682614747,
+        "min": 47755,
+        "p50": 49525,
+        "p95": 57231,
+        "p99": 66687,
+        "max": 70905
+      },
+      "gb_per_s_at_p50": 2.6465825340737004
+    },
+    {
+      "name": "read_1_slot",
+      "direction": "D2H",
+      "bytes": 8192,
+      "latency_ns": {
+        "n": 200,
+        "mean": 21553.795,
+        "stdev": 2774.047307689886,
+        "min": 19608,
+        "p50": 20703,
+        "p95": 28450,
+        "p99": 32900,
+        "max": 38305
+      },
+      "gb_per_s_at_p50": 0.39569144568420034
+    },
+    {
+      "name": "read_block_plane",
+      "direction": "D2H",
+      "bytes": 131072,
+      "latency_ns": {
+        "n": 200,
+        "mean": 62375.345,
+        "stdev": 9034.080176707026,
+        "min": 56018,
+        "p50": 59395,
+        "p95": 79702,
+        "p99": 99357,
+        "max": 125392
+      },
+      "gb_per_s_at_p50": 2.2067850829194375
+    },
+    {
+      "name": "copy_block_cow",
+      "direction": "D2D",
+      "bytes": 4194304,
+      "latency_ns": {
+        "n": 200,
+        "mean": 53480.325,
+        "stdev": 68517.91904553896,
+        "min": 43462,
+        "p50": 45397,
+        "p95": 50205,
+        "p99": 249572,
+        "max": 859027
+      },
+      "gb_per_s_at_p50": 92.39165583628875
+    }
+  ],
+  "cpu": [
+    {
+      "name": "write_1_slot",
+      "direction": "host memcpy",
+      "bytes": 8192,
+      "latency_ns": {
+        "n": 200,
+        "mean": 2505.655,
+        "stdev": 4230.219242566025,
+        "min": 221,
+        "p50": 368,
+        "p95": 10287,
+        "p99": 13274,
+        "max": 27604
+      },
+      "gb_per_s_at_p50": 22.26086956521739
+    },
+    {
+      "name": "write_block_plane",
+      "direction": "host memcpy",
+      "bytes": 131072,
+      "latency_ns": {
+        "n": 200,
+        "mean": 35769.49,
+        "stdev": 150295.9452815687,
+        "min": 6190,
+        "p50": 8648,
+        "p95": 85239,
+        "p99": 97525,
+        "max": 2102954
+      },
+      "gb_per_s_at_p50": 15.156336725254395
+    },
+    {
+      "name": "read_1_slot",
+      "direction": "host memcpy",
+      "bytes": 8192,
+      "latency_ns": {
+        "n": 200,
+        "mean": 438.665,
+        "stdev": 235.16305211576503,
+        "min": 218,
+        "p50": 316,
+        "p95": 869,
+        "p99": 1114,
+        "max": 1584
+      },
+      "gb_per_s_at_p50": 25.924050632911392
+    },
+    {
+      "name": "read_block_plane",
+      "direction": "host memcpy",
+      "bytes": 131072,
+      "latency_ns": {
+        "n": 200,
+        "mean": 10563.73,
+        "stdev": 2191.112644343281,
+        "min": 7970,
+        "p50": 10198,
+        "p95": 12140,
+        "p99": 21829,
+        "max": 26460
+      },
+      "gb_per_s_at_p50": 12.852716218866444
+    },
+    {
+      "name": "copy_block_cow",
+      "direction": "host memcpy",
+      "bytes": 4194304,
+      "latency_ns": {
+        "n": 200,
+        "mean": 1047364.575,
+        "stdev": 585154.9786170721,
+        "min": 653940,
+        "p50": 752934,
+        "p95": 2087999,
+        "p99": 2599801,
+        "max": 3238897
+      },
+      "gb_per_s_at_p50": 5.570613094906061
+    }
+  ]
+}
